@@ -27,40 +27,69 @@ library(lubridate)
 library(numDeriv)
 
 ## test with binomial data ----
-actual_p <- 0.2
-sample_size <- 10
-binom_data <- list("size" = sample_size,
-                   "x" = rbinom(n = 1, size = sample_size, prob = actual_p))
+# actual_p <- 0.2
+# sample_size <- 10
+# binom_data <- list("size" = sample_size,
+#                    "x" = rbinom(n = 1, size = sample_size, prob = actual_p))
+# 
+# # create lists for each relevant distribution
+# parameter_dists <- list("likelihood" = list("dist" = "binomial",
+#                                            "args" = list("prob" = "binom_prob",
+#                                                          "size" = 1)),
+#                         "prior_prob" = list("dist" = "uniform",
+#                                             "args" = list("max" = 1, "min" = 0)))
+# 
+# calc_prob(parameter_dists,x = list("prob" = 0.4),data=binom_data)
+# 
+# ## test with normal data ----
+# actual_mean = 1
+# actual_sd = 0.5
+# sample_size = 10
+# normal_data = rnorm(sample_size, mean = actual_mean, sd = actual_sd)
+# 
+# # define gaussian linear model posterior
+# linear_gauss_post <- function(pars,
+#                               dat,
+#                               sd_prior = function(sd){dunif(sd, min=0, max=50)},
+#                               mean_prior = function(mean){dnorm(mean, mean=0, sd=10)}) {
+#   
+#   # extract/calculate relevant parameters and data
+#   mu <- pars[1]
+#   sd <- pars[2]
+#   
+#   # calculate and return posterior
+#   posterior <- sum(log(dnorm(dat, mean = mu, sd = sd) * 
+#                          mean_prior(mu) *
+#                          sd_prior(sd)))
+#   return(posterior)
+# }
+# 
+# # fit map
+# map <- fit_map(posterior_fun = linear_gauss_post,
+#                sample_data = normal_data,
+#                start = c(0,1))
 
-# create lists for each relevant distribution
-parameter_dists <- list("likelihood" = list("dist" = "binomial",
-                                           "args" = list("prob" = "binom_prob",
-                                                         "size" = 1)),
-                        "prior_prob" = list("dist" = "uniform",
-                                            "args" = list("max" = 1, "min" = 0)))
-
-calc_prob(parameter_dists,x = list("prob" = 0.4),data=binom_data)
-
-## test with normal data ----
-actual_mean = 1
-actual_sd = 0.5
-sample_size = 10
-normal_data = rnorm(sample_size, mean = actual_mean, sd = actual_sd)
-
-## (Main Function) fit_map function ----
-fit_map <- function(parameter_dists = NA,
-                    samp_data = NA,
+## (Main Function) fit gaussian to posterior function ----
+fit_map <- function(posterior_fun = NA,
+                    sample_data = NA,
                     start = NA) {
   
-  # check that parameter dists is specified
-  if (!is.list(parameter_dists)) {
-    stop("Must provide parameter distribtuions")
-  }
+  ## fit multivariate gaussian to posterior
+  # find mode
+  map_out <- optim(par = start,
+                   fn = linear_gauss_post,
+                   "dat" = sample_data,
+                   control = list("fnscale" = -1))
   
-  # check if start is specified, and if it isn't then initialize
-  if (!is.list(start)) {
-    
-  }
+  u <- map_out$par
+  
+  # find covariance matrix at mode
+  v <- ginv(-hessian(func = linear_gauss_post,
+                     x = map_out$par,
+                     "dat" = sample_data))
+  
+  # return the mean and covariance
+  return(list("u" = u, "sigma" = v))
   
 }
 
@@ -157,5 +186,3 @@ calc_prob <- function(dist_list,
   return(prob_list)
   
 }
-
-## Function to calculate confidence intervals given data and map fit output ----
