@@ -285,7 +285,7 @@ c2 <- cov2cor(v2)
 post_samps <- data.table(mvrnorm(n = 1e4, mu = u2, Sigma = v2))
 setnames(post_samps,c("a","b","sigma"))
 
-# show variance of height for person with weight 50
+# show variance of average height for person with weight 50
 post_samps[, "h_at_50" := a + b*50]
 ggplot(post_samps) +
   geom_density(aes(h_at_50)) +
@@ -294,7 +294,7 @@ ggplot(post_samps) +
 # calculate 89% highest density interval when weight = 50
 hdi_50 <- hdi(post_samps[,"h_at_50"], credMass = 0.89)
 
-# function to get confidence at each sample weight
+# function to get mean height confidence at each sample weight
 calc_confidence <- function(dat,
                             map_params,
                             n_samples = 1e4,
@@ -329,4 +329,50 @@ ggplot(data = d2) +
               aes(x = w, ymin = low_c, ymax = high_c),alpha=0.2) +
   geom_line(data=best_line,aes(x,y),linetype = "dashed")
 
-## EXAMPLE 4 - Posterior confidence intervals for actual heights
+## EXAMPLE 4 - Posterior confidence intervals for actual heights ----
+
+# sample the posterior from Example 2
+post_samps <- data.table(mvrnorm(n = 1e4, mu = u2, Sigma = v2))
+setnames(post_samps,c("a","b","sigma"))
+
+# show variance of actual heights of person with weight 50
+post_samps[, "h_at_50" := rnorm(n = a,mean = a + b*50, sd = sigma)]
+ggplot(post_samps) +
+  geom_density(aes(h_at_50)) +
+  xlab("height|weight=50")
+
+# function to get height sample confidence at each sample weight
+calc_confidence <- function(dat,
+                            map_params,
+                            n_samples = 1e4,
+                            credMass = 0.89) {
+  
+  # create table of n_samples from map, and table of all unique weights
+  map_samples <- data.table(mvrnorm(n = n_samples, mu = u2, Sigma = v2))
+  setnames(map_samples,c("a","b","sigma"))
+  conf_dat <- data.table("w" = dat[,unique(weight)])
+  conf_dat[, c("low_c","high_c") := .(0,0)]
+  
+  # loop through each row in conf_dat, and calculate HDI
+  for (ind in 1:nrow(conf_dat)) {
+    h_dist <- map_samples[,rnorm(a,mean = a + b*conf_dat[ind,w], sd = sigma)]
+    h_hdi <- hdi(h_dist, credMass = credMass)
+    conf_dat[ind, c("low_c", "high_c") := .(h_hdi[1], h_hdi[2])]
+  }
+  return(conf_dat)
+}
+
+# calculate confidences
+h_sample_conf <- calc_confidence(dat = d2,
+                                 map_params = list("u" = u2,
+                                                   "v" = v2))
+
+# plot best line plus confidence intervals
+best_line <- data.table("x" = c(d2[,min(weight)],d2[,max(weight)]),
+                        "y" = u2[1] + u2[2]*c(d2[,min(weight)],d2[,max(weight)]))
+ggplot(data = d2) + 
+  geom_point(aes(weight,height)) +
+  geom_ribbon(data = h_sample_conf,
+              aes(x = w, ymin = low_c, ymax = high_c),alpha=0.2) +
+  geom_line(data=best_line,aes(x,y),linetype = "dashed") +
+  ggtitle("Height sample confidence")
