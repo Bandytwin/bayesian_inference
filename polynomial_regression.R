@@ -43,11 +43,11 @@ poly_post <- function(pars,
   mu_vec <- alpha + b1*weight + b2*weight^2
 
   # calculate and return posterior
-  posterior <- sum(log(dnorm(height, mean = mu_vec, sd = sd) * 
-                         alpha_prior(alpha) * 
-                         b1_prior(b1) *
-                         b2_prior(b2) *
-                         sd_prior(sd)))
+  posterior <- sum(log(dnorm(height, mean = mu_vec, sd = sd))) + 
+                         log(alpha_prior(alpha)) +
+                         log(b1_prior(b1)) +
+                         log(b2_prior(b2)) +
+                         log(sd_prior(sd))
   return(posterior)
 }
 

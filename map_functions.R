@@ -69,10 +69,50 @@ library(numDeriv)
 #                sample_data = normal_data,
 #                start = c(0,1))
 
-## (Main Function) fit gaussian to posterior function ----
+## build posterior function given specifications ----
+posterior_func <- funciton(pars,
+                           dat,
+                           formulas) {
+  
+  
+  
+  # extract/calculate relevant parameters and data
+  sd <- pars[1]
+  alpha <- pars[2]
+  b1 <- pars[3]
+  b2 <- pars[4]
+  height <- dat[,height]
+  weight <- dat[,s_weight]
+  mu_vec <- alpha + b1*weight + b2*weight^2
+  
+  # define posterior function in global environment
+  new_fun <- function(pars,
+                      dat) {
+    
+    
+    
+  }
+  
+    
+  # assign to global environment
+  assign(function_name, new_fun, envir = .GlobalEnv)
+  
+  # calculate and return posterior
+  posterior <- sum(log(dnorm(height, mean = mu_vec, sd = sd))) + 
+    log(alpha_prior(alpha)) +
+    log(b1_prior(b1)) +
+    log(b2_prior(b2)) +
+    log(sd_prior(sd))
+  return(posterior)
+}
+
+## fit MAP   ----
 fit_map <- function(posterior_fun = NA,
                     sample_data = NA,
                     start = NA) {
+  # poster_fun := output of build_posterior() <- also defined in this file
+  # sample data := data to use for finding the MAP estimator
+  # start := defines the parameters to be searched over
   
   ## fit multivariate gaussian to posterior
   # find mode

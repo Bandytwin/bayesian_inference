@@ -175,10 +175,12 @@ linear_gauss_post <- function(pars,
   mu_vec <- alpha + beta*weight
   
   # calculate and return posterior
-  posterior <- sum(log(dnorm(height, mean = mu_vec, sd = sd) * 
-                         alpha_prior(alpha) * 
-                         beta_prior(beta) *
-                         sd_prior(sd)))
+  # posterior <- sum(log(dnorm(height, mean = mu_vec, sd = sd) * 
+  #                        alpha_prior(alpha) * 
+  #                        beta_prior(beta) *
+  #                        sd_prior(sd)))
+  posterior <- sum(log(dnorm(height, mean = mu_vec, sd = sd))) +
+    log(alpha_prior(alpha)) + log(beta_prior(beta)) + log(sd_prior(sd))
   return(posterior)
 }
 
